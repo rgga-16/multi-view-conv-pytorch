@@ -1,0 +1,19 @@
+---
+SEEDS: [32,64,128,256]
+
+# Directories
+DATA_DIR: './data/images/dtd'
+WEIGHTS_DIR: './models/weights'
+CHKPTS_DIR : './models/checkpoints'
+OUTPUT_DIR: './outputs/'
+
+# Augmentation Details
+IMSIZE: 256
+NORM_MEAN : [0.485,0.456,0.406]
+NORM_STD : [0.229,0.224,0.225]
+
+# Training Details
+BATCH_SIZE: 2
+EPOCHS: 500
+LR: 1e-4
+
