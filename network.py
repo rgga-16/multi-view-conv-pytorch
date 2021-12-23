@@ -89,8 +89,8 @@ class Decoder(nn.Module):
 class MonsterNet(nn.Module):
     def __init__(self,n_views):
         super(MonsterNet,self).__init__()
-        self.encoder = Encoder()
-        self.decoders = [Decoder() for _ in range(n_views)]
+        self.encoder = Encoder().to(device)
+        self.decoders = [Decoder().to(device) for _ in range(n_views)]
     
 
     def forward(self,input):
@@ -105,8 +105,10 @@ class MonsterNet(nn.Module):
 
 
 if __name__ =='__main__':
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     net = MonsterNet(3)
-    noise = torch.rand((1,1,256,256))
+    noise = torch.rand((1,1,256,256),device=device)
     views = net(noise)
 
     print()
