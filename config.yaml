@@ -1,7 +1,9 @@
 ---
 SEEDS: [32,64,128,256]
 
-
+#Execution
+TRAIN: False 
+TEST: False 
 
 # Directories
 TRAIN_DIR: './data/train'
@@ -13,9 +15,10 @@ ENCODE_DIR: './data/encodings'
 
 # Data Details
 IMSIZE: 256
-CATEGORY: 'Chair'
+CATEGORY: 'Character'
 SKETCH_VIEWS: ['F','S','T']
-SKETCH_VARIATIONS: 4
+SKETCH_VARIATIONS: 3
+NUM_DN_VIEWS: 12
 NORM_MEAN : [0.485,0.456,0.406]
 NORM_STD : [0.229,0.224,0.225]
 
