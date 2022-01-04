@@ -6,8 +6,8 @@ TRAIN: False
 TEST: False 
 
 # Directories
-TRAIN_DIR: './data/train'
-TEST_DIR: './data/test'
+TRAIN_DIR: './mini_data/train'
+TEST_DIR: './mini_data/test'
 WEIGHTS_DIR: './models/weights'
 CHKPTS_DIR : './models/checkpoints'
 OUTPUT_DIR: './data/outputs'
@@ -15,7 +15,7 @@ ENCODE_DIR: './data/encodings'
 
 # Data Details
 IMSIZE: 256
-CATEGORY: 'Character'
+CATEGORY: 'Chair'
 SKETCH_VIEWS: ['F','S','T']
 SKETCH_VARIATIONS: 4
 NUM_DN_VIEWS: 12
