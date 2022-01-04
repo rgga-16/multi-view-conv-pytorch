@@ -14,7 +14,10 @@ def load_image(filename,mode='RGB'):
     img = Image.open(filename).convert(mode)
     return img
 
-def image_to_tensor(image):
+'''
+Converts PIL Image to Torch tensor
+'''
+def itot(image):
     transform = T.Compose([
         T.Resize(configs['IMSIZE']),
         T.ToTensor()
@@ -23,6 +26,19 @@ def image_to_tensor(image):
     tensor = transform(image)
 
     return tensor 
+
+'''
+Converts tensor to PIL Image
+'''
+def toti(tensor):
+
+    transform = T.Compose([
+        T.ToPILImage()
+    ])
+
+    image = transform(tensor)
+
+    return image
 
 
 global configs 
