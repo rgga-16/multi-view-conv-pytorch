@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import os 
 
-from utils import configs, load_image
+from utils import configs, load_image,image_to_tensor
 
 class Data(Dataset):
     def __init__(self,root,category,views,shape_list,shapenet_ids=[],shuffle=True,batch_size=-1):
@@ -17,25 +17,20 @@ class Data(Dataset):
         n_target_views = n_dnfs_views + n_dn_views
         imsize = configs['IMSIZE']
 
-        dn_list = []
-        dnfs_list = []
-        sketch_list = []
+        self.dn_lists = []
+        self.dnfs_lists = []
+        self.sketch_lists = []
 
         if shapenet_ids:
             for snid in shapenet_ids:
-                sketch_list_, dn_list_, dnfs_list_ = self.load_files_snid(root,shape_list,snid,n_dn_views,n_dnfs_views)
-                
-                sketch_list.extend(sketch_list_); dn_list.extend(dn_list_); dnfs_list.extend(dnfs_list_)
+                self.load_files_snid(root,shape_list,snid,n_dn_views,n_dnfs_views)  
         else:
-            sketch_list_, dn_list_, dnfs_list_ = self.load_files(root,shape_list,n_dn_views,n_dnfs_views)
-            sketch_list.extend(sketch_list_); dn_list.extend(dn_list_); dnfs_list.extend(dnfs_list_)
-        
+            self.load_files(root,shape_list,n_dn_views,n_dnfs_views)
+            #^Error. sketch_list, dn_list and dnfs_list are not appending their respective returned lists.
+ 
         print()
 
-
-
         # src_prefix_list = ['sketch/' for i in range(n_sketch_views)]
-        # src_interfix_list = [f'/sketch-{v}' for v in sketch_views]
 
         # if configs['TEST']:
         #     sketch_variation = 0 
@@ -43,10 +38,10 @@ class Data(Dataset):
         #     sketch_variations = [n for n in range(configs['SKETCH_VARIATIONS'])]
 
         # src_suffix_list = [f'-']
-        print()
     
     def load_files(self,root,shape_list,n_dn_views,n_dnfs_views):
         imsize = configs['IMSIZE']
+
         for shape_name in shape_list:
             shape = {}
             shape['name'] = shape_name 
@@ -55,10 +50,14 @@ class Data(Dataset):
             dnfs_files = [os.path.join(root,'dnfs',shape_name,f'dnfs-{imsize}-{dnfs_view}.png') for dnfs_view in range(n_dnfs_views)]
             sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{var}.png') for view in configs['SKETCH_VIEWS'] for var in range(configs['SKETCH_VARIATIONS'])]
             
-            dn_list = [load_image(dn_f) for dn_f in dn_files]
-            dnfs_list = [load_image(dnfs_f) for dnfs_f in dnfs_files]
-            sketch_list = [load_image(sketch_f) for sketch_f in sketch_files]
-        return sketch_list, dn_list, dnfs_list
+            dn_list = [image_to_tensor(load_image(dn_f)) for dn_f in dn_files]
+            dnfs_list = [image_to_tensor(load_image(dnfs_f)) for dnfs_f in dnfs_files]
+            sketch_list = [image_to_tensor(load_image(sketch_f,'L')) for sketch_f in sketch_files]
+        
+            self.dn_lists.append(dn_list)
+            self.dnfs_lists.append(dnfs_list)
+            self.sketch_lists.append(sketch_list)
+        return
     
     def load_files_snid(self,root,shape_list,snid,n_dn_views,n_dnfs_views):
         imsize = configs['IMSIZE']
@@ -71,11 +70,15 @@ class Data(Dataset):
             dnfs_files = [os.path.join(root,'dnfs',shape_name,snid,f'dnfs-{imsize}-{dnfs_view}.png') for dnfs_view in range(n_dnfs_views)]
             sketch_files = [os.path.join(root,'sketch',shape_name,snid,f'sketch-{view}-{var}.png') for view in configs['SKETCH_VIEWS'] for var in range(configs['SKETCH_VARIATIONS'])]
             
-            dn_list = [load_image(dn_f) for dn_f in dn_files]
-            dnfs_list = [load_image(dnfs_f) for dnfs_f in dnfs_files]
-            sketch_list = [load_image(sketch_f) for sketch_f in sketch_files]
+            dn_list = [image_to_tensor(load_image(dn_f)) for dn_f in dn_files]
+            dnfs_list = [image_to_tensor(load_image(dnfs_f)) for dnfs_f in dnfs_files]
+            sketch_list = [image_to_tensor(load_image(sketch_f,'L')) for sketch_f in sketch_files]
+
+            self.dn_lists.append(dn_list)
+            self.dnfs_lists.append(dnfs_list)
+            self.sketch_lists.append(sketch_list)
             
-        return sketch_list, dn_list, dnfs_list
+        return
 
     def __len__(self):
 
