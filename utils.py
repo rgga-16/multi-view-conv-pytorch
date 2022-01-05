@@ -1,4 +1,5 @@
 import yaml 
+import torch
 import os 
 from PIL import Image
 
@@ -18,14 +19,20 @@ def load_image(filename,mode='RGB'):
 Converts PIL Image to Torch tensor
 '''
 def itot(image):
+
+    
     transform = T.Compose([
         T.Resize(configs['IMSIZE']),
-        T.ToTensor()
+        T.ToTensor(),
     ])
 
     tensor = transform(image)
 
-    return tensor 
+    mean = (0.5,0.5,0.5) if tensor.shape[0]==3 else (0.5)
+    std = (0.5,0.5,0.5) if tensor.shape[0]==3 else (0.5)
+    tensor = T.Normalize(mean,std)(tensor)
+
+    return tensor.to(device) 
 
 '''
 Converts tensor to PIL Image
@@ -43,3 +50,6 @@ def toti(tensor):
 
 global configs 
 configs = read_configs()
+
+global device 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
