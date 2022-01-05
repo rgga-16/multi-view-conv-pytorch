@@ -17,7 +17,6 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 
-
 global SEED 
 SEED=32
 set_seed(SEED)

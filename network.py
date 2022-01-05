@@ -1,6 +1,7 @@
 import torch 
 from torch import nn 
 from torch.nn import functional as F
+from utils import device
 
 class Encoder(nn.Module):
 
@@ -61,7 +62,7 @@ class Decoder(nn.Module):
             return output
 
 
-    def __init__(self):
+    def __init__(self,out_c=5):
         super(Decoder,self).__init__()
         self.l7=self.DecoderLayer(512,512)
         self.l6=self.DecoderLayer(1024,512)
@@ -69,7 +70,7 @@ class Decoder(nn.Module):
         self.l4 = self.DecoderLayer(1024,256)
         self.l3 = self.DecoderLayer(512,128)
         self.l2 = self.DecoderLayer(256,64)
-        self.l1 = self.DecoderLayer(128,5)
+        self.l1 = self.DecoderLayer(128,out_c)
         self.tanh = nn.Tanh()
 
 
@@ -87,10 +88,11 @@ class Decoder(nn.Module):
 
 
 class MonsterNet(nn.Module):
-    def __init__(self,n_views):
+    def __init__(self,n_sketch_views,n_dn_views):
         super(MonsterNet,self).__init__()
-        self.encoder = Encoder().to(device)
-        self.decoders = [Decoder().to(device) for _ in range(n_views)]
+
+        self.encoder = Encoder(in_c=n_sketch_views).to(device)
+        self.decoders = [Decoder().to(device) for _ in range(n_dn_views)]
     
 
     def forward(self,input):
@@ -106,7 +108,6 @@ class MonsterNet(nn.Module):
 
 if __name__ =='__main__':
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     net = MonsterNet(3)
     noise = torch.rand((1,1,256,256),device=device)
     views = net(noise)
