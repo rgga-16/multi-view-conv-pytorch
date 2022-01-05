@@ -37,9 +37,16 @@ def train_loop(model, train_data, val_data):
 
             for i,sample in enumerate(dataloader):
                 sketch = sample[0]; dn = sample[1]; dnfs = sample[2]
+                # In the original implementation, it seems that the dn and dnfs
+                # samples are concatenated together.
                 print()
                 with torch.set_grad_enabled(phase=='train'):
                     output = model(sketch)
+
+                    # Predicted output is the first n_channel layers. last channel is mask. 
+                    # preds_content = tf.slice(preds, [0,0,0,0], [-1,-1,-1,num_channels-1])
+		            # preds_mask = tf.slice(preds, [0,0,0,num_channels-1], [-1,-1,-1,1])
+		            # preds = image.apply_mask(preds_content, preds_mask)
                     print()
                     # Calculate losses
                     # Loss.backward()
