@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms as T
 import os, random
 
-from utils import configs, load_image,itot,toti,extract_bool_mask,bool_to_real_mask
+from utils import configs, device, load_image,itot,toti,extract_bool_mask,bool_to_real_mask
 
 class Data(Dataset):
     def __init__(self,root,set,category,views,shape_list,shuffle=True,batch_size=-1):
@@ -21,6 +21,7 @@ class Data(Dataset):
         self.shape_list = shape_list 
         self.dn_lists = []
         self.dnfs_lists = []
+        self.mask_list = []
         self.target_lists = []
         self.sketch_lists = []
        
@@ -51,8 +52,24 @@ class Data(Dataset):
             targets_list = torch.cat([dnfs_list,dn_list],dim=0)
             bool_masks = extract_bool_mask(targets_list)
 
-            real_masks = bool_to_real_mask(bool_masks)
-            targets = torch.cat([targets_list,bool_masks],dim=1)
+            if configs['PREDICT_NORMAL']:
+                # target_shape = target_images.get_shape().as_list()
+		        # target_background = tf.concat([tf.zeros(target_shape[:-1]+[2]), tf.ones(target_shape[:-1]+[2])], 3) # (0,0,1,1)
+		        # target_images = tf.where(tf.tile(target_masks, [1,1,1,target_shape[3]]), target_images, target_background)
+                b,c,h,w = targets_list.shape 
+                target_background = torch.cat([torch.zeros((b,2,h,w),device=device),torch.ones((b,2,h,w),device=device)],dim=1)
+                tiled = torch.tile(bool_masks,[1,c,1,1])
+                targets_list = torch.where(tiled,targets_list,target_background)
+                print()
+            else:
+                # retain depth only
+		        # target_images = tf.slice(target_images, [0,0,0,3], [-1,-1,-1,1])
+                targets_list = targets_list[:,3:,:,:]
+                print()
+                pass
+            
+            real_mask = bool_masks
+            targets_list = torch.cat([targets_list,real_mask],dim=1)
 
             sketch_list_init = torch.stack([itot(load_image(sketch_f,'L')) for sketch_f in sketch_files],dim=1).squeeze(0)
             sketch_list_flipped = torch.flip(sketch_list_init,[1,2])
@@ -64,10 +81,12 @@ class Data(Dataset):
             shape['sketches'] = sketch_list 
             shape['dn'] = dn_list 
             shape['dnfs'] = dnfs_list
+            shape['mask'] = real_mask
             self.sketch_model_pairs.append(shape)
 
             self.dn_lists.append(dn_list)
             self.dnfs_lists.append(dnfs_list)
+            self.mask_list.append(real_mask)
             self.sketch_lists.append(sketch_list)
             self.target_lists.append(targets_list)
 

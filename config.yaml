@@ -2,8 +2,9 @@
 SEEDS: [32,64,128,256]
 
 #Execution
-TRAIN: False 
+TRAIN: True 
 TEST: False 
+PREDICT_NORMAL: False
 DEVICE: "cuda"
 
 # Directories
