@@ -58,6 +58,12 @@ def extract_bool_mask(image):
 
     return bool_mask
 
+def bool_to_real_mask(bool_mask):
+    ones = torch.ones_like(bool_mask,dtype=torch.float32)
+    negatives = torch.negative(ones)
+    real_mask = torch.where(bool_mask,ones,negatives)
+    return real_mask 
+
 
 global configs 
 configs = read_configs()
