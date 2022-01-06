@@ -36,12 +36,11 @@ def train_loop(model, train_data, val_data):
                 dataloader = val_loader
 
             for i,sample in enumerate(dataloader):
-                sketch = sample[0]; dn = sample[1]; dnfs = sample[2]
-                # In the original implementation, it seems that the dn and dnfs
-                # samples are concatenated together.
+                input = sample[0]; target = sample[1]
+
                 print()
                 with torch.set_grad_enabled(phase=='train'):
-                    output = model(sketch)
+                    output = model(input)
 
                     # Predicted output is the first n_channel layers. last channel is mask. 
                     # preds_content = tf.slice(preds, [0,0,0,0], [-1,-1,-1,num_channels-1])
