@@ -1,5 +1,7 @@
 import yaml 
-import torch
+import torch,torchvision
+
+from matplotlib import pyplot as plt
 import os 
 from PIL import Image
 
@@ -64,6 +66,15 @@ def bool_to_real_mask(bool_mask):
     real_mask = torch.where(bool_mask,ones,negatives)
     return real_mask 
 
+def show_images(images,normalize=True):
+    img_grid = torchvision.utils.make_grid(images,normalize=normalize)
+    plt.clf()
+    plt.axis('off')
+    plt.imshow(img_grid.cpu().permute(1,2,0))
+    plt.show()
+
+    
+    plt.clf()
 
 global configs 
 configs = read_configs()
