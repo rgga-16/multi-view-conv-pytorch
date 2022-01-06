@@ -47,6 +47,17 @@ def toti(tensor):
 
     return image
 
+def extract_bool_mask(image):
+    im_shape = image.shape
+    assert im_shape[1]==4
+
+    depth = image[:,3,:,:].unsqueeze(1)
+    trues = torch.ones_like(depth,dtype=torch.bool)
+    falses = torch.zeros_like(depth,dtype=torch.bool)
+    bool_mask = torch.where(depth<0.9,trues,falses)
+
+    return bool_mask
+
 
 global configs 
 configs = read_configs()

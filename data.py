@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms as T
 import os, random
 
-from utils import configs, load_image,itot,toti
+from utils import configs, load_image,itot,toti,extract_bool_mask
 
 class Data(Dataset):
     def __init__(self,root,set,category,views,shape_list,shuffle=True,batch_size=-1):
@@ -49,6 +49,7 @@ class Data(Dataset):
             dn_list = torch.stack([itot(load_image(dn_f,'RGBA')) for dn_f in dn_files],dim=0)
             dnfs_list = torch.stack([itot(load_image(dnfs_f,'RGBA')) for dnfs_f in dnfs_files],dim=0)
             targets_list = torch.cat([dnfs_list,dn_list],dim=0)
+            target_masks = extract_bool_mask(targets_list)
 
             sketch_list_init = torch.stack([itot(load_image(sketch_f,'L')) for sketch_f in sketch_files],dim=1).squeeze(0)
             sketch_list_flipped = torch.flip(sketch_list_init,[1,2])
@@ -122,5 +123,5 @@ if __name__=='__main__':
     
     train_data = load_train_data(root,configs['CATEGORY'],None)
 
-    sketches,dns,dnfss = train_data.__getitem__(0)
+    sketches,targets = train_data.__getitem__(0)
     print()
