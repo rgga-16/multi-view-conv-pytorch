@@ -14,7 +14,7 @@ class Data(Dataset):
 
         self.n_source_views = len(configs['SKETCH_VIEWS'])
         # self.n_dnfs_views = max(2,n_source_views)
-        self.n_dnfs_views=2
+        self.n_dnfs_views=configs['NUM_DNFS_VIEWS']
         self.n_dn_views = configs['NUM_DN_VIEWS']
         self.n_target_views = self.n_dnfs_views + self.n_dn_views
 
@@ -68,7 +68,7 @@ class Data(Dataset):
                 print()
                 pass
             
-            real_mask = bool_masks
+            real_mask = bool_to_real_mask(bool_masks)
             targets_list = torch.cat([targets_list,real_mask],dim=1)
 
             sketch_list_init = torch.stack([itot(load_image(sketch_f,'L')) for sketch_f in sketch_files],dim=1).squeeze(0)
@@ -91,7 +91,6 @@ class Data(Dataset):
             self.target_lists.append(targets_list)
 
         return
-    
 
     def __len__(self):
         return len(self.sketch_lists)
