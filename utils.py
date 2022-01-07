@@ -60,15 +60,27 @@ def extract_bool_mask(image):
 
     return bool_mask
 
+def real_to_bool_mask(real_mask):
+    bool_mask=torch.where(torch.greater(real_mask,torch.zeros_like(real_mask,device=device)),
+                                        torch.ones_like(real_mask,dtype=torch.bool,device=device),
+                                        torch.zeros_like(real_mask,dtype=torch.bool,device=device))
+    return bool_mask 
+
 def bool_to_real_mask(bool_mask):
     ones = torch.ones_like(bool_mask,dtype=torch.float32)
     negatives = torch.negative(ones)
     real_mask = torch.where(bool_mask,ones,negatives)
-    return real_mask 
+    return real_mask
+
+def apply_mask(content,mask):
+    c = content.shape[1]
+    if c > 1:
+        mask = torch.tile(mask,(1,c,1,1))
+    masked = torch.where(torch.greater(mask,0),content,torch.ones_like(content,device=device))
+    return masked
 
 def show_images(images,normalize=True):
     img_grid = torchvision.utils.make_grid(images,normalize=normalize)
-    plt.clf()
     plt.axis('off')
     plt.imshow(img_grid.cpu().permute(1,2,0))
     plt.show()
