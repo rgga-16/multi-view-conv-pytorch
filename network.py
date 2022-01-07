@@ -88,11 +88,11 @@ class Decoder(nn.Module):
 
 
 class MonsterNet(nn.Module):
-    def __init__(self,n_sketch_views,n_dn_views):
+    def __init__(self,n_target_views,in_c=4,out_c=5):
         super(MonsterNet,self).__init__()
 
-        self.encoder = Encoder(in_c=n_sketch_views).to(device)
-        self.decoders = [Decoder().to(device) for _ in range(n_dn_views)]
+        self.encoder = Encoder(in_c=in_c).to(device)
+        self.decoders = [Decoder(out_c=out_c).to(device) for _ in range(n_target_views)]
     
 
     def forward(self,input):
@@ -102,8 +102,8 @@ class MonsterNet(nn.Module):
 
         for dec in self.decoders:
             views.append(dec(last_layer_feat,feats))
-
-        return views
+        pred = torch.stack(views,dim=0).squeeze()
+        return pred
 
 
 if __name__ =='__main__':
