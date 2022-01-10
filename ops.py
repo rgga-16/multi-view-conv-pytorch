@@ -72,10 +72,13 @@ def mask_loss(pred,target,normalized=True):
 
 def adversarial_loss(disc_data,discriminator):
 
-    adv_loss = discriminator(disc_data)
-    # pred_loss_r = discriminator(pred)
-    # pred_loss_f = 1.0 - pred_loss_r
-    # target_loss_r = discriminator(target)
-    # target_loss_f = 1.0 - target_loss_r
+    probs = discriminator(disc_data)
+    split_size = probs.shape[0]//2
+    probs_split = torch.split(probs,split_size,dim=0)
+    probs_targets = probs_split[0]; probs_preds = probs_split[1]
 
-    return 
+    loss_g = torch.sum(-1.0 * torch.log(torch.max(1e-6,probs_preds)))
+    loss_d_r = torch.sum(-1.0 * torch.log(torch.max(1e-6,probs_targets)))
+    loss_d_f = torch.sum(-1.0 * torch.log(torch.max(1e-6,1-probs_preds)))
+
+    return loss_g, loss_d_r, loss_d_f

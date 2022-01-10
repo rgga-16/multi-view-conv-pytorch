@@ -22,11 +22,17 @@ def train_loop(model, train_data, val_data,discriminator=None):
     val_loader = DataLoader(train_data,batch_size = configs['BATCH_SIZE'], shuffle=True,worker_init_fn=init_fn)
 
     gen_optimizer = torch.optim.Adam(model.parameters(),lr=configs['LR'],betas=(0.9,0.999))
-    lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(gen_optimizer,gamma=0.96,verbose=True)
+    if discriminator:
+        disc_optimizer = torch.optim.Adam(discriminator.parameters(),lr=configs['LR'],betas=(0.9,0.999))
+        disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(disc_optimizer,gamma=0.96,verbose=True)
+    
+    gen_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(gen_optimizer,gamma=0.96,verbose=True)
 
     train_loss_history = []
     val_loss_history = []
 
+    lambda_imloss = 1.0
+    lambda_advloss = 0.01
     for epoch in range(n_epochs):
         for phase in ['train','val']:
             if phase=='train':
@@ -73,7 +79,20 @@ def train_loop(model, train_data, val_data,discriminator=None):
                         disc_data = torch.cat([targets,preds],dim=0)
                         se = torch.cat([isketches_expanded,isketches_expanded],dim=0)
                         disc_data = torch.cat([se,disc_data],dim=1)
-                        a_loss = adversarial_loss(disc_data,discriminator)
+                        loss_g_a,loss_d_r,loss_d_f = adversarial_loss(disc_data,discriminator)
+                    else: 
+                        loss_g_a=0
+                        loss_d_r=0
+                        loss_d_f=0
+
+
+                    overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g_a
+                    overall_d_loss = loss_d_r + loss_d_f
+
+                    overall_g_loss.backward()
+                    overall_d_loss.backward()
+
+                    # Implement checkpoint and printing losses and then train!
 
 
                     # show_images(target_content)

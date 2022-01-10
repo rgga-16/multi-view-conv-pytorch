@@ -120,9 +120,7 @@ class Discriminator(nn.Module):
 
 
         probs = self.sigmoid(self.fc_layer(flat_feats)).squeeze()
-        split_size = probs.shape[0]//2
-        probs_split = torch.split(probs,split_size,dim=0)
-        probs_targets = probs_split[0]; probs_preds = probs_split[1]
+        
         return probs 
 if __name__ =='__main__':
 
