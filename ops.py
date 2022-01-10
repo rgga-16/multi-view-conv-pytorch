@@ -38,14 +38,14 @@ Per-pixel normal_loss
 '''
 def normal_loss(pred,target,bool_mask,normalized=True):
     """
-		input:
-			predicts   : n x H x W x 3      predicted normals
-			targets    : n x H x W x 3      ground-truth normals
-			mask       : n x H x W x 1      boolean mask. Applied to only account for loss values from foreground
-			normalized : boolean            whether output loss should be normalized by pixel number
-		output:
-			loss       : scalar             loss value
-	"""
+        input:
+            predicts   : n x H x W x 3      predicted normals
+            targets    : n x H x W x 3      ground-truth normals
+            mask       : n x H x W x 1      boolean mask. Applied to only account for loss values from foreground
+            normalized : boolean            whether output loss should be normalized by pixel number
+        output:
+            loss       : scalar             loss value
+    """
 
     b,c,_,_ = pred.shape 
     l2_dist = torch.square(pred-target)
@@ -58,6 +58,9 @@ def normal_loss(pred,target,bool_mask,normalized=True):
 
     return normal_loss
 
+'''
+Binary cross entropy loss between predicted and target binary mask
+'''
 def mask_loss(pred,target,normalized=True):
 
     # mask_loss = F.binary_cross_entropy(pred,target)
@@ -67,6 +70,12 @@ def mask_loss(pred,target,normalized=True):
 
     return mask_loss
 
-def adversarial_loss(pred,target):
+def adversarial_loss(disc_data,discriminator):
+
+    adv_loss = discriminator(disc_data)
+    # pred_loss_r = discriminator(pred)
+    # pred_loss_f = 1.0 - pred_loss_r
+    # target_loss_r = discriminator(target)
+    # target_loss_f = 1.0 - target_loss_r
 
     return 

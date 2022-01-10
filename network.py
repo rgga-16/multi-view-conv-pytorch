@@ -106,6 +106,24 @@ class MonsterNet(nn.Module):
         return pred
 
 
+class Discriminator(nn.Module):
+    def __init__(self,in_c=1) -> None:
+        super(Discriminator,self).__init__()
+
+        self.encoder = Encoder(in_c=in_c)
+        self.fc_layer = nn.Linear(2048,1)
+        self.sigmoid = nn.Sigmoid()
+    
+    def forward(self,input):
+        features,_ = self.encoder(input)
+        flat_feats = torch.flatten(features,start_dim=1)
+
+
+        probs = self.sigmoid(self.fc_layer(flat_feats)).squeeze()
+        split_size = probs.shape[0]//2
+        probs_split = torch.split(probs,split_size,dim=0)
+        probs_targets = probs_split[0]; probs_preds = probs_split[1]
+        return probs 
 if __name__ =='__main__':
 
     net = MonsterNet(3)

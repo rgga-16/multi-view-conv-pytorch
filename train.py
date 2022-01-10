@@ -7,7 +7,7 @@ import data, network, utils,seeder
 
 from seeder import init_fn
 from utils import configs,device,apply_mask,show_images,real_to_bool_mask
-from ops import depth_loss,normal_loss,adversarial_loss,mask_loss,overall_loss
+from ops import depth_loss,normal_loss,adversarial_loss,mask_loss,overall_loss,adversarial_loss
 
 
 def train_step(model,dataloader,loss_history,optim=None):
@@ -16,13 +16,13 @@ def train_step(model,dataloader,loss_history,optim=None):
     return 
 
 
-def train_loop(model, train_data, val_data): 
+def train_loop(model, train_data, val_data,discriminator=None): 
     n_epochs = configs['EPOCHS']
     train_loader = DataLoader(train_data,batch_size = configs['BATCH_SIZE'], shuffle=True,worker_init_fn=init_fn)
     val_loader = DataLoader(train_data,batch_size = configs['BATCH_SIZE'], shuffle=True,worker_init_fn=init_fn)
 
-    optimizer = torch.optim.Adam(model.parameters(),lr=configs['LR'],betas=(0.9,0.999))
-    lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,gamma=0.96,verbose=True)
+    gen_optimizer = torch.optim.Adam(model.parameters(),lr=configs['LR'],betas=(0.9,0.999))
+    lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(gen_optimizer,gamma=0.96,verbose=True)
 
     train_loss_history = []
     val_loss_history = []
@@ -47,9 +47,11 @@ def train_loop(model, train_data, val_data):
 
                     target_content = target_raw[:,:-1,:,:]             
                     target_mask = target_raw[:,-1:,:,:]
-                    mask_max = torch.max(target_mask)
-                    mask_min = torch.min(target_mask)
+                    # tm_min = torch.min(target_mask)
+                    # tm_max = torch.max(target_mask)
                     targets = apply_mask(target_content,target_mask)
+
+                    isketches_expanded = torch.tile(input_sketches,(target_raw.shape[0],1,1,1))
 
                     if configs['PREDICT_NORMAL']:
                         preds_normal = pred_content[:,:-1,:,:]
@@ -66,6 +68,13 @@ def train_loop(model, train_data, val_data):
                     d_loss = depth_loss(preds_depth,targets_depth,real_to_bool_mask(target_mask))
                     n_loss = normal_loss(preds_normal,targets_normal,real_to_bool_mask(target_mask))
                     m_loss = mask_loss(pred_mask,target_mask)
+
+                    if discriminator:
+                        disc_data = torch.cat([targets,preds],dim=0)
+                        se = torch.cat([isketches_expanded,isketches_expanded],dim=0)
+                        disc_data = torch.cat([se,disc_data],dim=1)
+                        a_loss = adversarial_loss(disc_data,discriminator)
+
 
                     # show_images(target_content)
                     # show_images(target_mask)
@@ -93,11 +102,12 @@ if __name__=='__main__':
     train_data = data.load_train_data(root,configs['CATEGORY'],None)
 
     # n_sketch_views = len(configs['SKETCH_VIEWS']) * configs['SKETCH_VARIATIONS']
-    in_c = len(configs['SKETCH_VIEWS'])*2
+    sketch_in_c = len(configs['SKETCH_VIEWS'])*2
 
-    model = network.MonsterNet(n_target_views=configs['NUM_DN_VIEWS']+configs['NUM_DNFS_VIEWS'],in_c=in_c)
-
-    train_loop(model,train_data,None)
+    model = network.MonsterNet(n_target_views=configs['NUM_DN_VIEWS']+configs['NUM_DNFS_VIEWS'],in_c=sketch_in_c)
+    d_in_c = 4+sketch_in_c
+    discriminator = network.Discriminator(in_c=4+sketch_in_c)
+    train_loop(model,train_data,None,discriminator)
 
 
     print()
