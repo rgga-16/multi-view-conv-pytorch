@@ -17,6 +17,13 @@ def load_image(filename,mode='RGB'):
     img = Image.open(filename).convert(mode)
     return img
 
+def denormalize(tensor):
+
+    mean = (0.5,0.5,0.5) if tensor.shape[0]==3 else (0.5)
+    std = (0.5,0.5,0.5) if tensor.shape[0]==3 else (0.5)
+    denormalized = tensor * std + mean
+    return denormalized
+
 '''
 Converts PIL Image to Torch tensor
 '''

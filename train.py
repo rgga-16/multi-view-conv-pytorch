@@ -67,9 +67,9 @@ def train_loop(model, train_data, val_data):
                     n_loss = normal_loss(preds_normal,targets_normal,real_to_bool_mask(target_mask))
                     m_loss = mask_loss(pred_mask,target_mask)
 
-                    show_images(target_content)
-                    show_images(target_mask)
-                    show_images(targets)
+                    # show_images(target_content)
+                    # show_images(target_mask)
+                    # show_images(targets)
                     print()
 
 

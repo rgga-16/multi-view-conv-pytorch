@@ -1,7 +1,7 @@
 # Computation of losses and other operations here
 import torch
 import torch.nn.functional as F
-from utils import device
+from utils import device,denormalize
 
 def overall_loss():
 
@@ -59,20 +59,12 @@ def normal_loss(pred,target,bool_mask,normalized=True):
     return normal_loss
 
 def mask_loss(pred,target,normalized=True):
-    bce = torch.nn.BCELoss()
+
     # mask_loss = F.binary_cross_entropy(pred,target)
-    mask_loss = bce(pred,target).item() #CUDA ERROR HERE. Try to debug this.
+    p = denormalize(pred)
+    t = denormalize(target)
+    mask_loss = F.binary_cross_entropy(p,t,reduction='mean')
 
-    p = pred*0.5 + 0.5
-    t = target*0.5 + 0.5
-
-    # mask_loss2 = -t * log(p) - (1-t)*(log(1-p))
-    mask_loss2 = torch.sum(-1.0 * torch.multiply(torch.log(torch.max(torch.tensor(1e-6),p)),t) - torch.multiply(1-t, torch.log(torch.max(torch.tensor(1e-6),1-p))))
-
-    if normalized:
-        b,c,h,w = pred.shape
-        n_pixels = c*h*w 
-        mask_loss/=n_pixels
     return mask_loss
 
 def adversarial_loss(pred,target):
