@@ -102,7 +102,8 @@ class MonsterNet(nn.Module):
 
         for dec in self.decoders:
             views.append(dec(last_layer_feat,feats))
-        pred = torch.stack(views,dim=0).squeeze()
+        pred = torch.stack(views,dim=0)
+        pred = pred.reshape(pred.shape[0]*pred.shape[1],pred.shape[2],pred.shape[3],pred.shape[4])
         return pred
 
 

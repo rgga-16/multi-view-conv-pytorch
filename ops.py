@@ -77,8 +77,8 @@ def adversarial_loss(disc_data,discriminator):
     probs_split = torch.split(probs,split_size,dim=0)
     probs_targets = probs_split[0]; probs_preds = probs_split[1]
 
-    loss_g = torch.sum(-1.0 * torch.log(torch.max(1e-6,probs_preds)))
-    loss_d_r = torch.sum(-1.0 * torch.log(torch.max(1e-6,probs_targets)))
-    loss_d_f = torch.sum(-1.0 * torch.log(torch.max(1e-6,1-probs_preds)))
+    loss_g = torch.sum(-1.0 * torch.log(probs_preds))
+    loss_d_r = torch.sum(-1.0 * torch.log(probs_targets))
+    loss_d_f = torch.sum(-1.0 * torch.log(1-probs_preds))
 
     return loss_g, loss_d_r, loss_d_f
