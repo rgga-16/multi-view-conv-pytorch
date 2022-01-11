@@ -70,6 +70,10 @@ def mask_loss(pred,target,normalized=True):
 
     return mask_loss
 
+def adversarial_loss2(pred,target,discriminator):
+    
+    return 
+
 def adversarial_loss(disc_data,discriminator):
 
     probs = discriminator(disc_data)
