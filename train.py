@@ -145,6 +145,7 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                         overall_g_loss.backward()
                         overall_d_loss.backward() #BUG HERE. Cannot backward overall_d_loss(). I think you shouldn't input the disc_data concatenated together.
                         # Instead, input the real batch and fake batch separately into the discriminator.
+                        # Refer to DCGAN tutorial to see how adversarial losses are implemented.
                         gen_optimizer.step()
                         if discriminator: disc_optimizer.step()
                     
