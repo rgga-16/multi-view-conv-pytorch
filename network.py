@@ -111,9 +111,9 @@ class Discriminator(nn.Module):
     def __init__(self,in_c=1) -> None:
         super(Discriminator,self).__init__()
 
-        self.encoder = Encoder(in_c=in_c)
-        self.fc_layer = nn.Linear(2048,1)
-        self.sigmoid = nn.Sigmoid()
+        self.encoder = Encoder(in_c=in_c).to(device)
+        self.fc_layer = nn.Linear(2048,1).to(device)
+        self.sigmoid = nn.Sigmoid().to(device)
     
     def forward(self,input):
         features,_ = self.encoder(input)

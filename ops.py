@@ -71,8 +71,23 @@ def mask_loss(pred,target,normalized=True):
     return mask_loss
 
 def adversarial_loss2(pred,target,discriminator):
+
+    target_probs = discriminator(target) #Get probablities on target/real batch
+    real_label_d = torch.full_like(target_probs,1.0,device=device)
+    loss_d_real = F.binary_cross_entropy(target_probs,real_label_d) #Compute discriminator error on target batch that it is real
+
+    pred_probs = discriminator(pred) #Get probabilities on predicted/fake batch
+    fake_label_d = torch.full_like(pred_probs.detach(),0.0,device=device)
+    loss_d_fake = F.binary_cross_entropy(pred_probs,fake_label_d) #Compute discriminator error on predicted batch that it is fake
+    # loss_d_fake2 = F.binary_cross_entropy(1-pred_probs,real_label)
+
+    loss_d = loss_d_real + loss_d_fake
+
+    real_label_g = torch.full_like(pred_probs,1.0,device=device)
+    pred_probs_real = discriminator(pred)
+    loss_g = F.binary_cross_entropy(pred_probs_real,real_label_g) #Compute error on predicted batch that it is real. For the generator
     
-    return 
+    return loss_g,loss_d
 
 def adversarial_loss(disc_data,discriminator):
 

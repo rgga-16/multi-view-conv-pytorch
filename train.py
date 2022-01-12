@@ -1,5 +1,6 @@
 
 import torch
+from torch.nn import functional as F
 from torch.utils.data import DataLoader
 import os,copy,numpy as np
 
@@ -7,7 +8,7 @@ import data, network, utils,seeder
 
 from seeder import init_fn
 from utils import configs,device,apply_mask,show_images,real_to_bool_mask
-from ops import depth_loss,normal_loss,adversarial_loss,mask_loss,overall_loss,adversarial_loss
+from ops import adversarial_loss2, depth_loss,normal_loss,adversarial_loss,mask_loss,overall_loss,adversarial_loss
 
 
 def train_step(model,dataloader,loss_history,optim=None):
@@ -127,27 +128,52 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                     n_loss = normal_loss(preds_normal,targets_normal,real_to_bool_mask(target_mask))
                     m_loss = mask_loss(pred_mask,target_mask)
 
-                    if discriminator:
-                        disc_data = torch.cat([targets,preds],dim=0)
-                        se = torch.cat([isketches_expanded,isketches_expanded],dim=0)
-                        disc_data = torch.cat([se,disc_data],dim=1)
-                        loss_g_a,loss_d_r,loss_d_f = adversarial_loss(disc_data,discriminator)
-                    else: 
-                        loss_g_a=0
-                        loss_d_r=0
-                        loss_d_f=0
+                    # if discriminator:
+                    #     loss_g_a,loss_d = adversarial_loss2(preds,targets,discriminator)
+                    #     # disc_data = torch.cat([targets,preds],dim=0)
+                    #     # se = torch.cat([isketches_expanded,isketches_expanded],dim=0)
+                    #     # disc_data = torch.cat([se,disc_data],dim=1)
+                    #     # loss_g_a,loss_d_r,loss_d_f = adversarial_loss(disc_data,discriminator)
+                    # else: 
+                    #     loss_g_a=0
+                    #     loss_d = 0
+                    #     # loss_d_r=0
+                    #     # loss_d_f=0
+                    
+                    target_probs = discriminator(targets) #Get probablities on target/real batch
+                    real_label_d = torch.full_like(target_probs,1.0,device=device)
+                    loss_d_real = F.binary_cross_entropy(target_probs,real_label_d) #Compute discriminator error on target batch that it is real;
+                    # loss_d_real.backward()
+
+                    pred_probs = discriminator(preds) #Get probabilities on predicted/fake batch
+                    fake_label_d = torch.full_like(pred_probs.detach(),0.0,device=device)
+                    loss_d_fake = F.binary_cross_entropy(pred_probs,fake_label_d) #Compute discriminator error on predicted batch that it is fake
+                    # loss_d_fake2 = F.binary_cross_entropy(1-pred_probs,real_label)
+                    # loss_d_fake.backward()
+
+                    loss_d = loss_d_real + loss_d_fake
+                    loss_d.backward(retain_graph=True)
+                    disc_optimizer.step()
+
+                    real_label_g = torch.full_like(pred_probs,1.0,device=device)
+                    pred_probs_real = discriminator(preds)
+                    loss_g = F.binary_cross_entropy(pred_probs_real,real_label_g) #Compute error on predicted batch that it is real. For the generator
 
 
-                    overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g_a
-                    overall_d_loss = loss_d_r + loss_d_f
+                    overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g
+                    overall_g_loss.backward()
+                    gen_optimizer.step()
+                    overall_d_loss = loss_d
 
-                    if phase=='train':
-                        overall_g_loss.backward()
-                        overall_d_loss.backward() #BUG HERE. Cannot backward overall_d_loss(). I think you shouldn't input the disc_data concatenated together.
+                    # if phase=='train':
+                    #     overall_g_loss.backward(retain_graph=True)
+                    #     gen_optimizer.step()
+                    #     if discriminator:
+                    #         overall_d_loss.backward() #BUG HERE. Cannot backward overall_d_loss() 'a second time'??. Tried below already. 
+                    #         disc_optimizer.step()
+                        # I think you shouldn't input the disc_data concatenated together.
                         # Instead, input the real batch and fake batch separately into the discriminator.
                         # Refer to DCGAN tutorial to see how adversarial losses are implemented.
-                        gen_optimizer.step()
-                        if discriminator: disc_optimizer.step()
                     
                     gen_running_loss+= overall_g_loss *tb
                     disc_running_loss += overall_d_loss * tb
@@ -224,8 +250,9 @@ if __name__=='__main__':
     sketch_in_c = len(configs['SKETCH_VIEWS'])*2
 
     generator = network.MonsterNet(n_target_views=configs['NUM_DN_VIEWS']+configs['NUM_DNFS_VIEWS'],in_c=sketch_in_c)
-    d_in_c = 4+sketch_in_c
-    discriminator = network.Discriminator(in_c=4+sketch_in_c)
+    # d_in_c = 4+sketch_in_c
+    d_in_c = sketch_in_c
+    discriminator = network.Discriminator(in_c=d_in_c)
     train_loop(generator,train_data,val_data,discriminator)
 
 

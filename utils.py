@@ -27,11 +27,13 @@ def denormalize(tensor):
 '''
 Converts PIL Image to Torch tensor
 '''
-def itot(image):
+def itot(image,size=None):
 
+    if size is None:
+        size=configs['IMSIZE']
     
     transform = T.Compose([
-        T.Resize(configs['IMSIZE']),
+        T.Resize(size),
         T.ToTensor(),
     ])
 
