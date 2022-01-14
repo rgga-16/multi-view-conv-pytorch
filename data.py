@@ -48,8 +48,8 @@ class Data(Dataset):
             sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{variation}.png') for view in configs['SKETCH_VIEWS']]
             # sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{var}.png') for view in configs['SKETCH_VIEWS'] for var in range(configs['SKETCH_VARIATIONS'])]
             
-            dn_list = torch.stack([itot(load_image(dn_f,'RGBA'),size=imsize//2) for dn_f in dn_files],dim=0)
-            dnfs_list = torch.stack([itot(load_image(dnfs_f,'RGBA'),size=imsize//2) for dnfs_f in dnfs_files],dim=0)
+            dn_list = torch.stack([itot(load_image(dn_f,'RGBA'),size=imsize) for dn_f in dn_files],dim=0)
+            dnfs_list = torch.stack([itot(load_image(dnfs_f,'RGBA'),size=imsize) for dnfs_f in dnfs_files],dim=0)
             targets_list = torch.cat([dnfs_list,dn_list],dim=0)
             bool_masks = extract_bool_mask(targets_list)
 
@@ -72,7 +72,7 @@ class Data(Dataset):
             real_mask = bool_to_real_mask(bool_masks)
             targets_list = torch.cat([targets_list,real_mask],dim=1)
 
-            sketch_list_init = torch.stack([itot(load_image(sketch_f,'L'),size=imsize//2) for sketch_f in sketch_files],dim=1).squeeze(0)
+            sketch_list_init = torch.stack([itot(load_image(sketch_f,'L'),size=imsize) for sketch_f in sketch_files],dim=1).squeeze(0)
             sketch_list_flipped = torch.flip(sketch_list_init,[1,2])
             sketch_list = torch.cat([sketch_list_init,sketch_list_flipped],dim=0)
 

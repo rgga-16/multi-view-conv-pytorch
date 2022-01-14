@@ -22,7 +22,7 @@ class Encoder(nn.Module):
         self.e4 = self.encoder_layer(256,512)
         self.e5 = self.encoder_layer(512,512)
         self.e6 = self.encoder_layer(512,512)
-        # self.e7 = self.encoder_layer(512,512)
+        self.e7 = self.encoder_layer(512,512)
 
 
     def forward(self,input):
@@ -41,9 +41,9 @@ class Encoder(nn.Module):
         layer_feats['ef5']=ef5
         ef6 = self.e6(ef5) #ef6 = (b,512,4,4) 2
         layer_feats['ef6']=ef6
-        # ef7 = self.e7(ef6) #ef7 = (b,512,2,2)
-        # layer_feats['ef7']=ef7
-        ef7=ef6
+        ef7 = self.e7(ef6) #ef7 = (b,512,2,2)
+        layer_feats['ef7']=ef7
+        # ef7=ef6
         return ef7,layer_feats
 
 
@@ -65,7 +65,7 @@ class Decoder(nn.Module):
 
     def __init__(self,out_c=5):
         super(Decoder,self).__init__()
-        # self.l7=self.DecoderLayer(512,512)
+        self.l7=self.DecoderLayer(512,512)
         self.l6=self.DecoderLayer(1024,512)
         self.l5 = self.DecoderLayer(1024,512)
         self.l4 = self.DecoderLayer(1024,256)
@@ -77,8 +77,8 @@ class Decoder(nn.Module):
 
     def forward(self,ef7,layer_feats):
         assert ef7.shape[1]==512
-        # df6 = F.dropout(self.l7(ef7)) # df6=(b,512,4,4)
-        df6=ef7
+        df6 = F.dropout(self.l7(ef7)) # df6=(b,512,4,4) 
+        # df6=ef7
         df5 = F.dropout(self.l6(torch.cat((df6,layer_feats['ef6']),dim=1))) # df5=(b,512,8,8) 4
         df4 = F.dropout(self.l5(torch.cat((df5,layer_feats['ef5']),dim=1))) # df4=(b,512,16,16) 8
         df3 = self.l4(torch.cat((df4,layer_feats['ef4']),dim=1)) #df3=(b,256,32,32) 16
