@@ -76,6 +76,7 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
 
 
     for epoch in range(start_epoch,n_epochs):
+        print(f'Epoch {epoch+1}/{n_epochs}')
         for phase in ['train','val']:
             if phase=='train':
                 generator.train()
@@ -205,7 +206,7 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
             print(f'Discriminator checkpoint saved in {disc_chkpt_path}')
         
         print(f'Generator checkpoint saved in {gen_chkpt_path}')
-        
+        print('\n')
         if epoch % 10 ==10-1:
             gen_lr_scheduler.step()
             if discriminator: disc_lr_scheduler.step()
