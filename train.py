@@ -136,6 +136,8 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                         else: 
                             loss_g=0
                             loss_d = 0
+                        
+                        overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g
 
                         if phase=='train':
                             overall_g_loss.backward(retain_graph=True)
@@ -144,7 +146,7 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                                 loss_d.backward()
                                 disc_optimizer.step()
                         
-                        overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g
+                        
                         overall_d_loss = loss_d
                         gen_running_loss+= overall_g_loss *tb
                         disc_running_loss += overall_d_loss * tb
