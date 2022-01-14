@@ -30,7 +30,7 @@ class Data(Dataset):
         assert len(self.dn_lists)==len(self.dnfs_lists)
         assert len(self.dn_lists)==len(self.sketch_lists)
         assert len(self.dnfs_lists)==len(self.sketch_lists)
-        print()
+        
 
     
     def load_files(self,root,shape_list):
@@ -61,12 +61,12 @@ class Data(Dataset):
                 target_background = torch.cat([torch.zeros((b,2,h,w),device=device),torch.ones((b,2,h,w),device=device)],dim=1)
                 tiled = torch.tile(bool_masks,[1,c,1,1])
                 targets_list = torch.where(tiled,targets_list,target_background)
-                print()
+                
             else:
                 # retain depth only
 		        # target_images = tf.slice(target_images, [0,0,0,3], [-1,-1,-1,1])
                 targets_list = targets_list[:,3:,:,:]
-                print()
+                
                 pass
             
             real_mask = bool_to_real_mask(bool_masks)
@@ -146,4 +146,4 @@ if __name__=='__main__':
     train_data = load_train_data(root,configs['CATEGORY'],None)
 
     sketches,targets = train_data.__getitem__(0)
-    print()
+    

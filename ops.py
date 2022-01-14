@@ -27,7 +27,7 @@ def depth_loss(pred,target,bool_mask,normalized=True):
 
     if normalized:
         depth_loss = torch.mean(l1_dist_masked) * (b*c)
-        print()
+        
     else: 
         depth_loss = torch.sum(l1_dist_masked)
 
@@ -78,8 +78,7 @@ def adversarial_loss2(pred,target,discriminator):
 
     pred_probs = discriminator(pred) #Get probabilities on predicted/fake batch
     fake_label_d = torch.full_like(pred_probs,0.0,device=device).detach()
-    loss_d_fake = F.binary_cross_entropy(pred_probs,fake_label_d) #Compute discriminator error on predicted batch that it is fake
-    # loss_d_fake2 = F.binary_cross_entropy(1-pred_probs,real_label)
+    loss_d_fake = F.binary_cross_entropy(pred_probs.detach(),fake_label_d) #Compute discriminator error on predicted batch that it is fake
 
     loss_d = loss_d_real + loss_d_fake
 

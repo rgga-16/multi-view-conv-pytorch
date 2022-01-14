@@ -98,10 +98,11 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
             for i,sample in enumerate(dataloader):
                 with torch.autograd.set_detect_anomaly(True):
                     input_sketches = sample[0]
-                    # target_raw = sample[1].view((sample[1].shape[0]*sample[1].shape[1],sample[1].shape[2],sample[1].shape[3],-1))
+
                     target_raw = sample[1]
                     tb,tn_views,tc,th,tw = target_raw.shape
                     target_raw = target_raw.view(tb*tn_views,tc,th,tw)
+
                     gen_optimizer.zero_grad()
                     if discriminator: disc_optimizer.zero_grad()
 
@@ -114,8 +115,6 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                         target_content = target_raw[:,:-1,:,:]             
                         target_mask = target_raw[:,-1:,:,:]
                         targets = apply_mask(target_content,target_mask)
-
-                        # isketches_expanded = torch.tile(input_sketches,(target_raw.shape[0],1,1,1))
 
                         if configs['PREDICT_NORMAL']:
                             preds_normal = pred_content[:,:-1,:,:] #Get predicted normal maps
@@ -134,30 +133,19 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
 
                         if discriminator:
                             loss_g,loss_d = adversarial_loss2(preds,targets,discriminator)
-                            # disc_data = torch.cat([targets,preds],dim=0)
-                            # se = torch.cat([isketches_expanded,isketches_expanded],dim=0)
-                            # disc_data = torch.cat([se,disc_data],dim=1)
-                            # loss_g_a,loss_d_r,loss_d_f = adversarial_loss(disc_data,discriminator)
                         else: 
                             loss_g=0
                             loss_d = 0
-                            # loss_d_r=0
-                            # loss_d_f=0
-
-
-                        overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g
-                        overall_d_loss = loss_d
 
                         if phase=='train':
                             overall_g_loss.backward(retain_graph=True)
                             gen_optimizer.step()
                             if discriminator:
-                                overall_d_loss.backward()  #BUG: There is something in the code [float Tensor (512)] that's stopping this from backpropagating.
+                                loss_d.backward()
                                 disc_optimizer.step()
-                            # I think you shouldn't input the disc_data concatenated together.
-                            # Instead, input the real batch and fake batch separately into the discriminator.
-                            # Refer to DCGAN tutorial to see how adversarial losses are implemented.
                         
+                        overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g
+                        overall_d_loss = loss_d
                         gen_running_loss+= overall_g_loss *tb
                         disc_running_loss += overall_d_loss * tb
                         gen_batch_running_loss += overall_g_loss
@@ -216,7 +204,6 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
             torch.save(disc_chkpt,disc_chkpt_path)
             print(f'Discriminator checkpoint saved in {disc_chkpt_path}')
         
-        
         print(f'Generator checkpoint saved in {gen_chkpt_path}')
         
         if epoch % 10 ==10-1:
@@ -240,7 +227,7 @@ if __name__=='__main__':
     # d_in_c = 4+sketch_in_c
     d_in_c = sketch_in_c
     discriminator = network.Discriminator(in_c=d_in_c)
-    train_loop(generator,train_data,val_data,None)
+    train_loop(generator,train_data,val_data,discriminator)
 
 
-    print()
+    

@@ -130,4 +130,4 @@ if __name__ =='__main__':
     noise = torch.rand((1,1,256,256),device=device)
     views = net(noise)
 
-    print()
+    
