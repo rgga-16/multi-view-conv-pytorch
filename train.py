@@ -184,7 +184,7 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
             # gen_epoch_lh.append(gen_epoch_loss)
             # disc_epoch_lh.append(disc_epoch_loss)
 
-        gen_chkpt = generator.get_state_dict()
+        gen_chkpt = generator.state_dict()
         gen_chkpt['epoch'] = epoch
         gen_chkpt['best_gen_weights'] = best_gen_wts
         gen_chkpt['best_val_gen_l'] = best_val_gen_l
@@ -195,7 +195,7 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
         torch.save(gen_chkpt,gen_chkpt_path)
 
         if discriminator: 
-            disc_chkpt = discriminator.get_state_dict()
+            disc_chkpt = discriminator.state_dict()
             disc_chkpt['best_disc_weights'] = best_disc_wts
             disc_chkpt['best_val_disc_l'] = best_val_disc_l
             disc_chkpt['train_disc_lh'] = train_disc_lh
