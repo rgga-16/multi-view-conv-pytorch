@@ -74,8 +74,6 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
         # disc_epoch_lh = disc_chkpt['disc_epoch_lh']
         print(f'Discriminator checkpoint found.')
 
-        
-
 
     for epoch in range(start_epoch,n_epochs):
         for phase in ['train','val']:
@@ -98,10 +96,10 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
             for i,sample in enumerate(dataloader):
                 with torch.autograd.set_detect_anomaly(True):
                     input_sketches = sample[0]
-
                     target_raw = sample[1]
-                    tb,tn_views,tc,th,tw = target_raw.shape
-                    target_raw = target_raw.view(tb*tn_views,tc,th,tw)
+
+                    tb = target_raw.shape[0]
+                    target_raw = torch.flatten(target_raw,start_dim=0,end_dim=1)
 
                     gen_optimizer.zero_grad()
                     if discriminator: disc_optimizer.zero_grad()
@@ -127,44 +125,44 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                             targets_depth = target_content
                             targets_normal = torch.tile(torch.zeros_like(targets_depth,device=device),(1,3,1,1))
 
-                        d_loss = depth_loss(preds_depth,targets_depth,real_to_bool_mask(target_mask))
-                        n_loss = normal_loss(preds_normal,targets_normal,real_to_bool_mask(target_mask))
-                        m_loss = mask_loss(pred_mask,target_mask)
+                        L_depth = depth_loss(preds_depth,targets_depth,real_to_bool_mask(target_mask))
+                        L_normal = normal_loss(preds_normal,targets_normal,real_to_bool_mask(target_mask))
+                        L_mask = mask_loss(pred_mask,target_mask)
 
                         if discriminator:
-                            loss_g,loss_d = adversarial_loss2(preds,targets,discriminator)
+                            L_adv_g,L_adv_d = adversarial_loss(preds,targets,discriminator)
                         else: 
-                            loss_g=0
-                            loss_d = 0
+                            L_adv_g=0
+                            L_adv_d = 0
                         
-                        overall_g_loss = (lambda_imloss * (d_loss+n_loss+m_loss)) + lambda_advloss * loss_g
+                        L_G = (lambda_imloss * (L_depth+L_normal+L_mask)) + lambda_advloss * L_adv_g
+
 
                         if phase=='train':
-                            overall_g_loss.backward(retain_graph=True)
+                            L_G.backward()
                             gen_optimizer.step()
-                            if discriminator:
-                                loss_d.backward()
-                                disc_optimizer.step()
-                        
-                        
-                        overall_d_loss = loss_d
-                        gen_running_loss+= overall_g_loss *tb
-                        disc_running_loss += overall_d_loss * tb
-                        gen_batch_running_loss += overall_g_loss
-                        disc_batch_running_loss += overall_d_loss
-                        
-                        gen_lh.append(overall_g_loss)
-                        if discriminator: disc_lh.append(overall_d_loss)
+                            del pred_mask; del target_mask
+                            del preds_normal; del targets_normal
+                            del preds_depth; del targets_depth
+                            del pred_content; del target_content
 
-                        # show_images(target_content)
-                        # show_images(target_mask)
-                        # show_images(targets)
+                            if discriminator:
+                                L_adv_d.backward()
+                                disc_optimizer.step()
+
+                        gen_running_loss+= L_G.item() *tb
+                        disc_running_loss += L_adv_d.item() * tb
+                        gen_batch_running_loss += L_G.item()
+                        disc_batch_running_loss += L_adv_d.item()
+                        
+                        gen_lh.append(L_G.item())
+                        if discriminator: disc_lh.append(L_adv_d.item())
+
                         if i % b == b-1: 
                             batch_str = f'[{phase} Batch {i+1}/{len(dataloader)}] Gen Loss: {gen_batch_running_loss/b:.5f}'
                             if discriminator: batch_str = f'{batch_str} | Disc Loss: {disc_batch_running_loss/b:.5f}'
                             gen_batch_running_loss = 0.0; disc_batch_running_loss=0.0
                             print(batch_str)
-
             
             gen_epoch_loss = gen_running_loss/ dataloader.dataset.__len__()
             disc_epoch_loss = disc_running_loss / dataloader.dataset.__len__() 
