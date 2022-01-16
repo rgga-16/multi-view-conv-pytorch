@@ -8,8 +8,8 @@ PREDICT_NORMAL: True
 DEVICE: "cuda"
 
 # Directories
-# TRAIN_DIR: './data/train'
-TRAIN_DIR: './mini_data/train'
+TRAIN_DIR: './data/train'
+# TRAIN_DIR: './mini_data/train'
 TEST_DIR: './mini_data/test'
 WEIGHTS_DIR: './models/weights'
 CHKPTS_DIR : './models/checkpoints'
