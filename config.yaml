@@ -17,7 +17,7 @@ ENCODE_DIR: './data/encodings'
 
 # Data Details
 IMSIZE: 256
-CATEGORY: 'Chair'
+CATEGORY: 'Airplane'
 # SKETCH_VIEWS: ['F','S','T']
 SKETCH_VIEWS: ['F','S']
 SKETCH_VARIATIONS: 4
