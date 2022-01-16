@@ -8,7 +8,8 @@ PREDICT_NORMAL: True
 DEVICE: "cuda"
 
 # Directories
-TRAIN_DIR: './data/train'
+# TRAIN_DIR: './data/train'
+TRAIN_DIR: './mini_data/train'
 TEST_DIR: './mini_data/test'
 WEIGHTS_DIR: './models/weights'
 CHKPTS_DIR : './models/checkpoints'
@@ -28,7 +29,7 @@ NORM_MEAN : [0.5,0.5,0.5]
 NORM_STD : [0.5,0.5,0.5]
 
 # Training Details
-BATCH_SIZE: 1
+BATCH_SIZE: 2
 EPOCHS: 100
 LR: 0.0001
 NUM_BATCH_CHKPTS: 5
