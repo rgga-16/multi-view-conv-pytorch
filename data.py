@@ -24,6 +24,9 @@ class Data(Dataset):
         self.mask_list = []
         self.target_lists = []
         self.sketch_lists = []
+
+        self.dn_flists = []
+        self.dnfs_flists = []
        
         self.load_files(root,shape_list)
 
@@ -83,6 +86,13 @@ class Data(Dataset):
             shape['dn'] = dn_list 
             shape['dnfs'] = dnfs_list
             shape['mask'] = real_mask
+
+            shape['dn_f'] = dn_files 
+            shape['dnfs_f'] = dnfs_files 
+            shape['sketches_f'] = sketch_files
+
+
+
             self.sketch_model_pairs.append(shape)
 
             self.dn_lists.append(dn_list)
@@ -98,6 +108,9 @@ class Data(Dataset):
     
     def __getitem__(self,index):
         shape = self.sketch_model_pairs[index]
+
+        # Do dnfs, dn, target, and sketch file 
+        # loading and tensor conversion ops here!
 
 
         return shape['sketches'], shape['targets']
