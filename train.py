@@ -219,7 +219,7 @@ if __name__=='__main__':
     root = os.path.join(configs['TRAIN_DIR'],configs['CATEGORY'])
     
     train_data = data.load_train_data(root,configs['CATEGORY'],None)
-    val_data = data.load_train_data(root,configs['CATEGORY'],None)
+    val_data = data.load_val_data(root,configs['CATEGORY'],None)
 
     # n_sketch_views = len(configs['SKETCH_VIEWS']) * configs['SKETCH_VARIATIONS']
     sketch_in_c = len(configs['SKETCH_VIEWS'])*2
