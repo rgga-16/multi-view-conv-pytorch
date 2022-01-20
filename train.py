@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader
 import os,copy,numpy as np
 
 import data, network, utils,seeder 
+import args
+from args import args_
 
 from seeder import init_fn
 from utils import configs,device,apply_mask,show_images,real_to_bool_mask
@@ -19,7 +21,7 @@ def train_step(model,dataloader,loss_history,optim=None):
 
 def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path=None,disc_chkpt_path=None): 
     
-    n_epochs = configs['EPOCHS']
+    n_epochs = args_.epochs
     start_epoch=0
     
     best_gen_wts = copy.deepcopy(generator.state_dict())
@@ -37,12 +39,12 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
     gen_epoch_lh = []
     disc_epoch_lh = []
 
-    train_loader = DataLoader(train_data,batch_size = configs['BATCH_SIZE'], shuffle=True,worker_init_fn=init_fn)
-    val_loader = DataLoader(val_data,batch_size = configs['BATCH_SIZE'], shuffle=True,worker_init_fn=init_fn)
+    train_loader = DataLoader(train_data,batch_size = args_.batch_size, shuffle=True,worker_init_fn=init_fn)
+    val_loader = DataLoader(val_data,batch_size = args_.batch_size, shuffle=True,worker_init_fn=init_fn)
 
-    gen_optimizer = torch.optim.Adam(generator.parameters(),lr=configs['LR'],betas=(0.9,0.999))
+    gen_optimizer = torch.optim.Adam(generator.parameters(),lr=args_.lr,betas=(0.9,0.999))
     if discriminator:
-        disc_optimizer = torch.optim.Adam(discriminator.parameters(),lr=configs['LR'],betas=(0.9,0.999))
+        disc_optimizer = torch.optim.Adam(discriminator.parameters(),lr=args_.lr,betas=(0.9,0.999))
         disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(disc_optimizer,gamma=0.96,verbose=True)
     
     gen_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(gen_optimizer,gamma=0.96,verbose=True)
@@ -51,8 +53,10 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
     lambda_advloss = 0.01
 
     if gen_chkpt_path:
-        gen_chkpt = torch.load(gen_chkpt_path)
-        generator.load_state_dict(gen_chkpt)
+        gen_chkpt = torch.load(gen_chkpt_path,map_location=device)
+        generator.load_state_dict(gen_chkpt['gen_weights'])
+        gen_optimizer.load_state_dict(gen_chkpt['gen_optim_weights'])
+        gen_lr_scheduler.load_state_dict(gen_chkpt['gen_lr_sched_weights'])
         start_epoch = gen_chkpt['epoch']+1
         epoch_chkpts = gen_chkpt['epoch_chkpts']
 
@@ -64,13 +68,15 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
         print(f'Generator checkpoint found. Resuming training from epoch {start_epoch+1}.\n')
     
     if discriminator and disc_chkpt_path:
-        disc_chkpt = torch.load(disc_chkpt_path)
-        discriminator.load_state_dict(disc_chkpt)
-
+        disc_chkpt = torch.load(disc_chkpt_path,map_location=device)
+        discriminator.load_state_dict(disc_chkpt['disc_weights'])
+        disc_optimizer.load_state_dict(disc_chkpt['disc_optim_weights'])
+        disc_lr_scheduler.load_state_dict(disc_chkpt['disc_lr_sched_weights'])
         best_disc_wts = disc_chkpt['best_disc_weights']
         best_val_disc_l = disc_chkpt['best_val_disc_l']
         train_disc_lh = disc_chkpt['train_disc_lh']
         val_disc_lh = disc_chkpt['val_disc_lh']
+        
         # disc_epoch_lh = disc_chkpt['disc_epoch_lh']
         print(f'Discriminator checkpoint found.')
 
@@ -182,10 +188,13 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                     print(f'Found best discriminator params at epoch {epoch+1}')
         
         epoch_chkpts.append(epoch)
-            # gen_epoch_lh.append(gen_epoch_loss)
-            # disc_epoch_lh.append(disc_epoch_loss)
+        # gen_epoch_lh.append(gen_epoch_loss)
+        # disc_epoch_lh.append(disc_epoch_loss)
 
-        gen_chkpt = generator.state_dict()
+        gen_chkpt = {}
+        gen_chkpt['gen_weights'] = generator.state_dict()
+        gen_chkpt['gen_optim_weights'] = gen_optimizer.state_dict()
+        gen_chkpt['gen_lr_sched_weights'] = gen_lr_scheduler.state_dict()
         gen_chkpt['epoch'] = epoch
         gen_chkpt['best_gen_weights'] = best_gen_wts
         gen_chkpt['best_val_gen_l'] = best_val_gen_l
@@ -196,7 +205,10 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
         torch.save(gen_chkpt,gen_chkpt_path)
 
         if discriminator: 
-            disc_chkpt = discriminator.state_dict()
+            disc_chkpt = {}
+            disc_chkpt['disc_weights'] = discriminator.state_dict()
+            disc_chkpt['disc_optim_weights'] = disc_optimizer.state_dict()
+            disc_chkpt['disc_lr_sched_weights'] = disc_lr_scheduler.state_dict()
             disc_chkpt['best_disc_weights'] = best_disc_wts
             disc_chkpt['best_val_disc_l'] = best_val_disc_l
             disc_chkpt['train_disc_lh'] = train_disc_lh
@@ -210,25 +222,41 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
         if epoch % 10 ==10-1:
             gen_lr_scheduler.step()
             if discriminator: disc_lr_scheduler.step()
+    
+    last_gen_chkpt_path = os.path.join(configs['CHKPTS_DIR'],'last_gen_chkpt.pt')
+    last_disc_chkpt_path = os.path.join(configs['CHKPTS_DIR'],'last_disc_chkpt.pt')
+    torch.save(disc_chkpt,last_disc_chkpt_path)
+    torch.save(gen_chkpt,last_gen_chkpt_path)
+    print(f'Last generator checkpoint saved in {last_gen_chkpt_path}')
+    print(f'Last disc checkpoint saved in {last_disc_chkpt_path}')
 
-
+    gen_wts_path = os.path.join(args_.weights_dir,'best_gen_weights.pth')
+    disc_wts_path = os.path.join(args_.weights_dir,'best_disc_weights.pth')
+    torch.save(best_gen_wts,gen_wts_path)
+    torch.save(best_disc_wts,disc_wts_path)
+    print(f'Best generator weights saved in {gen_wts_path}')
+    print(f'Best discriminator weights saved in {disc_wts_path}')
     return
 
 if __name__=='__main__':
 
-    root = os.path.join(configs['TRAIN_DIR'],configs['CATEGORY'])
+    root = os.path.join(args_.train_dir,args_.category)
     
-    train_data = data.load_train_data(root,configs['CATEGORY'],None)
-    val_data = data.load_val_data(root,configs['CATEGORY'],None)
+    train_data = data.load_train_data(root,args_.category,None)
+    # val_data = data.load_val_data(root,args_.category,None)
+    val_data = data.load_train_data(root,args_.category,None)
 
-    # n_sketch_views = len(configs['SKETCH_VIEWS']) * configs['SKETCH_VARIATIONS']
-    sketch_in_c = len(configs['SKETCH_VIEWS'])*2
+    # n_sketch_views = len(args_.sketch_views) * args_.sketch_variations
+    sketch_in_c = len(args_.sketch_views)*2
 
-    generator = network.MonsterNet(n_target_views=configs['NUM_DN_VIEWS']+configs['NUM_DNFS_VIEWS'],in_c=sketch_in_c)
+    generator = network.MonsterNet(n_target_views=args_.num_dn_views+args_.num_dnfs_views,in_c=sketch_in_c)
     # d_in_c = 4+sketch_in_c
     d_in_c = sketch_in_c
     discriminator = network.Discriminator(in_c=d_in_c)
-    train_loop(generator,train_data,val_data,discriminator)
+
+    gen_chkpt_path = os.path.join(args_.chkpt_dir,'gen_chkpt.pt') if args_.chkpt_dir else None
+    disc_chkpt_path = os.path.join(args_.chkpt_dir,'disc_chkpt.pt') if args_.chkpt_dir else None
+    train_loop(generator,train_data,val_data,discriminator,gen_chkpt_path,disc_chkpt_path)
 
 
     
