@@ -17,7 +17,7 @@ OUTPUT_DIR: './data/outputs'
 ENCODE_DIR: './data/encodings'
 
 # Data Details
-IMSIZE: 256
+IMSIZE: 128
 CATEGORY: 'Airplane'
 # SKETCH_VIEWS: ['F','S','T']
 SKETCH_VIEWS: ['F','S']

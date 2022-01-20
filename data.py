@@ -4,6 +4,8 @@ from torchvision import transforms as T
 import os, random
 
 from utils import configs, device, load_image,itot,toti,extract_bool_mask,bool_to_real_mask
+import args
+from args import args_
 
 class Data(Dataset):
     def __init__(self,root,set,category,views,shape_list,shuffle=True):
@@ -12,10 +14,10 @@ class Data(Dataset):
         self.set=set
         self.category = category
 
-        self.n_source_views = len(configs['SKETCH_VIEWS'])
+        self.n_source_views = len(args_.sketch_views)
         # self.n_dnfs_views = max(2,n_source_views)
-        self.n_dnfs_views=configs['NUM_DNFS_VIEWS']
-        self.n_dn_views = configs['NUM_DN_VIEWS']
+        self.n_dnfs_views=args_.num_dnfs_views
+        self.n_dn_views = args_.num_dn_views
         self.n_target_views = self.n_dnfs_views + self.n_dn_views
 
         self.shape_list = shape_list 
@@ -34,19 +36,19 @@ class Data(Dataset):
 
     
     def load_files(self,root,shape_list):
-        imsize = configs['IMSIZE']
+        imsize = args_.imsize
 
         for shape_name in shape_list:
             
-            dnfs_files = [os.path.join(root,'dnfs',shape_name,f'dnfs-{imsize}-{dnfs_view}.png') for dnfs_view in range(self.n_dnfs_views)]
-            dn_files = [os.path.join(root,'dn',shape_name,f'dn-{imsize}-{dn_view}.png') for dn_view in range(self.n_dn_views)]
+            dnfs_files = [os.path.join(root,'dnfs',shape_name,f'dnfs-256-{dnfs_view}.png') for dnfs_view in range(self.n_dnfs_views)]
+            dn_files = [os.path.join(root,'dn',shape_name,f'dn-256-{dn_view}.png') for dn_view in range(self.n_dn_views)]
             
             if self.set=='test':
                 variation=0
             else:
-                variation = random.randint(0,configs['SKETCH_VARIATIONS']-1)
-            sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{variation}.png') for view in configs['SKETCH_VIEWS']]
-            # sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{var}.png') for view in configs['SKETCH_VIEWS'] for var in range(configs['SKETCH_VARIATIONS'])]
+                variation = random.randint(0,args_.sketch_variations-1)
+            sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{variation}.png') for view in args_.sketch_views]
+            # sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{var}.png') for view in args_.sketch_views for var in range(args_.sketch_variations)]
 
             shape = {}
             shape['name'] = shape_name 
@@ -74,9 +76,10 @@ class Data(Dataset):
     
     def __getitem__(self,index):
         shape = self.sketch_model_pairs[index]
+        imsize = args_.imsize
 
-        dn_list = torch.stack([itot(load_image(dn_f,'RGBA'),size=configs['IMSIZE']//2) for dn_f in shape['dn_f']],dim=0)
-        dnfs_list = torch.stack([itot(load_image(dnfs_f,'RGBA'),size=configs['IMSIZE']//2) for dnfs_f in shape['dnfs_f']],dim=0)
+        dn_list = torch.stack([itot(load_image(dn_f,'RGBA'),size=imsize) for dn_f in shape['dn_f']],dim=0)
+        dnfs_list = torch.stack([itot(load_image(dnfs_f,'RGBA'),size=imsize) for dnfs_f in shape['dnfs_f']],dim=0)
         targets_list = torch.cat([dnfs_list,dn_list],dim=0)
         bool_masks = extract_bool_mask(targets_list)
 
@@ -92,7 +95,7 @@ class Data(Dataset):
         real_mask = bool_to_real_mask(bool_masks)
         targets_list = torch.cat([targets_list,real_mask],dim=1)
 
-        sketch_list_init = torch.stack([itot(load_image(sketch_f,'L'),size=configs['IMSIZE']//2) for sketch_f in shape['sketches_f']],dim=1).squeeze(0)
+        sketch_list_init = torch.stack([itot(load_image(sketch_f,'L'),size=imsize) for sketch_f in shape['sketches_f']],dim=1).squeeze(0)
         sketch_list_flipped = torch.flip(sketch_list_init,[1,2])
         sketch_list = torch.cat([sketch_list_init,sketch_list_flipped],dim=0)
 
