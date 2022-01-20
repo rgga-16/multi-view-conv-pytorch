@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms as T
 import os, random
 
-from utils import configs as c, device, load_image,itot,toti,extract_bool_mask,bool_to_real_mask
+from utils import configs, device, load_image,itot,toti,extract_bool_mask,bool_to_real_mask
 import args
 from args import args_
 
@@ -83,7 +83,7 @@ class Data(Dataset):
         targets_list = torch.cat([dnfs_list,dn_list],dim=0)
         bool_masks = extract_bool_mask(targets_list)
 
-        if c['PREDICT_NORMAL']:
+        if configs['PREDICT_NORMAL']:
             b,c,h,w = targets_list.shape 
             target_background = torch.cat([torch.zeros((b,2,h,w),device=device),torch.ones((b,2,h,w),device=device)],dim=1)
             tiled = torch.tile(bool_masks,[1,c,1,1])
