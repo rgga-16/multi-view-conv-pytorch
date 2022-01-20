@@ -141,9 +141,9 @@ def load_encode_data(root,category,views):
 
 if __name__=='__main__':
 
-    root = os.path.join(configs['TRAIN_DIR'],configs['CATEGORY'])
+    root = os.path.join(args_.train_dir,args_.train_dir)
     
-    train_data = load_train_data(root,configs['CATEGORY'],None)
+    train_data = load_train_data(root,args_.train_dir,None)
 
     sketches,targets = train_data.__getitem__(0)
     

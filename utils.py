@@ -5,6 +5,8 @@ from matplotlib import pyplot as plt
 import os 
 from PIL import Image
 
+from args import args_
+
 from torchvision import transforms as T
 
 def read_configs(path='./config.yaml'):
@@ -30,7 +32,7 @@ Converts PIL Image to Torch tensor
 def itot(image,size=None):
 
     if size is None:
-        size=configs['IMSIZE']
+        size=args_.imsize
     
     transform = T.Compose([
         T.Resize(size),
