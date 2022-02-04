@@ -1,15 +1,15 @@
+from abc import abstractclassmethod
 import torch 
 from torch.utils.data import Dataset
 from torchvision import transforms as T
 import os, random
 
 from utils import configs, device, load_image,itot,toti,extract_bool_mask,bool_to_real_mask
-import args
+
 from args import args_
 
 class Data(Dataset):
     def __init__(self,root,set,category,views,shape_list,shuffle=True):
-
         self.sketch_model_pairs = []
         self.set=set
         self.category = category
@@ -21,19 +21,18 @@ class Data(Dataset):
         self.n_target_views = self.n_dnfs_views + self.n_dn_views
 
         self.shape_list = shape_list 
-        # self.dn_lists = []
-        # self.dnfs_lists = []
-        # self.mask_list = []
-        # self.target_lists = []
-        # self.sketch_lists = []
-       
+    
+    def __len__(self):
+        return len(self.sketch_model_pairs)
+    
+    @abstractclassmethod
+    def load_files(self,root,shape_list):
+        pass
+
+class SketchModelPairedData(Data):
+    def __init__(self,root,category,views,shape_list,set,shuffle=True):
+        super().__init__(root, set, category, views, shape_list, shuffle)
         self.load_files(root,shape_list)
-
-        # assert len(self.dn_lists)==len(self.dnfs_lists)
-        # assert len(self.dn_lists)==len(self.sketch_lists)
-        # assert len(self.dnfs_lists)==len(self.sketch_lists)
-        
-
     
     def load_files(self,root,shape_list):
         imsize = args_.imsize
@@ -52,27 +51,12 @@ class Data(Dataset):
 
             shape = {}
             shape['name'] = shape_name 
-            # shape['targets'] = targets_list 
-            # shape['sketches'] = sketch_list 
-            # shape['dn'] = dn_list 
-            # shape['dnfs'] = dnfs_list
-            # shape['mask'] = real_mask
-
             shape['dn_f'] = dn_files 
             shape['dnfs_f'] = dnfs_files 
             shape['sketches_f'] = sketch_files
             self.sketch_model_pairs.append(shape)
 
-            # self.dn_lists.append(dn_list)
-            # self.dnfs_lists.append(dnfs_list)
-            # self.mask_list.append(real_mask)
-            # self.sketch_lists.append(sketch_list)
-            # self.target_lists.append(targets_list)
-
         return
-
-    def __len__(self):
-        return len(self.sketch_model_pairs)
     
     def __getitem__(self,index):
         shape = self.sketch_model_pairs[index]
@@ -102,6 +86,40 @@ class Data(Dataset):
 
         return sketch_list, targets_list
 
+class TestSketchData(Data):
+    def __init__(self, root, category, views, shape_list,set='test', shuffle=True):
+        super().__init__(root, set, category, views, shape_list, shuffle)
+        self.load_files(root,shape_list)
+    
+    def load_files(self,root,shape_list):
+        for shape_name in shape_list:
+            if self.set=='test':
+                variation=0
+            else:
+                variation = random.randint(0,args_.sketch_variations-1)
+            sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{variation}.png') for view in args_.sketch_views]
+            # sketch_files = [os.path.join(root,'sketch',shape_name,f'sketch-{view}-{var}.png') for view in args_.sketch_views for var in range(args_.sketch_variations)]
+
+            shape = {}
+            shape['name'] = shape_name 
+            shape['sketches_f'] = sketch_files
+            self.sketch_model_pairs.append(shape)
+    
+    def __getitem__(self, index):
+        shape = self.sketch_model_pairs[index]
+
+        name = shape['name']
+        imsize = args_.imsize
+
+        sketch_list_init = torch.stack([itot(load_image(sketch_f,'L'),size=imsize) for sketch_f in shape['sketches_f']],dim=1).squeeze(0)
+        sketch_list_flipped = torch.flip(sketch_list_init,[1,2])
+        sketch_list = torch.cat([sketch_list_init,sketch_list_flipped],dim=0)
+
+
+        return sketch_list,name
+
+        
+
 def load_train_data(root,category,views):
 
     shape_list_file = open(os.path.join(root,'train-list.txt'))
@@ -110,7 +128,7 @@ def load_train_data(root,category,views):
 
     assert category in ['Airplane','Chair','Character']
 
-    return Data(root,'train',category,views,shape_list)
+    return SketchModelPairedData(root,category,views,shape_list,'train')
 
 def load_val_data(root,category,views):
 
@@ -120,30 +138,26 @@ def load_val_data(root,category,views):
 
     assert category in ['Airplane','Chair','Character']
 
-    return Data(root,'val',category,views,shape_list)
+    return SketchModelPairedData(root,category,views,shape_list,'val')
 
 
-def load_test_data(root,category,style,views):
+def load_test_data(root,category,views):
 
-    assert style=='Draw' or style=='Synthetic'
-
-    shape_list_file = None 
+    # assert category in [
+    #     'AirplaneDraw',
+    #     'AirplaneSynthetic',
+    #     'ChairDraw',
+    #     'ChairSynthetic',
+    #     'CharacterDraw',
+    #     'CharacterSynthetic'
+    # ]
 
     shape_list_file = open(os.path.join(root,'test-list.txt'))
     shape_list = shape_list_file.read().splitlines()
     shape_list_file.close() 
 
-    return Data(root,'test',category,views,shape_list)
+    return TestSketchData(root,category,views,shape_list)
 
 
 def load_encode_data(root,category,views):
     return 
-
-if __name__=='__main__':
-
-    root = os.path.join(args_.train_dir,args_.train_dir)
-    
-    train_data = load_train_data(root,args_.train_dir,None)
-
-    sketches,targets = train_data.__getitem__(0)
-    

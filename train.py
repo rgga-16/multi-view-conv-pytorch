@@ -9,8 +9,8 @@ import args
 from args import args_
 
 from seeder import init_fn
-from utils import configs,device,apply_mask,show_images,real_to_bool_mask
-from ops import adversarial_loss2, depth_loss,normal_loss,adversarial_loss,mask_loss,overall_loss,adversarial_loss
+from utils import configs,device,apply_mask,show_images,real_to_bool_mask,toti
+from ops import depth_loss,normal_loss,adversarial_loss,mask_loss,overall_loss,adversarial_loss
 
 
 def train_step(model,dataloader,loss_history,optim=None):
@@ -132,6 +132,20 @@ def train_loop(generator, train_data, val_data,discriminator=None,gen_chkpt_path
                             targets_depth = target_content
                             targets_normal = torch.tile(torch.zeros_like(targets_depth,device=device),(1,3,1,1))
 
+                        for i in range(tb):
+                            tn = toti(targets_normal[i])
+                            td = toti(targets_depth[i])
+                            t = toti(targets[i])
+                            tm = toti(target_mask[i])
+
+                            tn.save(f'normal-dn{tb}--{i}.png')
+                            td.save(f'depth-dn{tb}--{i}.png')
+                            t.save(f'target-dn{tb}--{i}.png')
+                            tm.save(f'mask-dn{tb}--{i}.png')
+                            print()
+
+                        
+                        
                         L_depth = depth_loss(preds_depth,targets_depth,real_to_bool_mask(target_mask))
                         L_normal = normal_loss(preds_normal,targets_normal,real_to_bool_mask(target_mask))
                         L_mask = mask_loss(pred_mask,target_mask)

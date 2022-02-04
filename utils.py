@@ -7,6 +7,15 @@ from PIL import Image
 
 from torchvision import transforms as T
 
+def mkdir(path):
+    """create a single empty directory if it didn't exist
+
+    Parameters:
+        path (str) -- a single directory path
+    """
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 def read_configs(path='./config.yaml'):
     with open(path) as f:
         configs = yaml.load(f,Loader=yaml.FullLoader)

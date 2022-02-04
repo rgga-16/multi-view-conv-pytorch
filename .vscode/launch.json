@@ -16,7 +16,38 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/train.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": [
+                // "--chkpt_dir", "./models/checkpoints",
+                "--train_dir","./mini_data/train",
+                "--epochs", "5",
+                "--imsize", "128"
+
+            ],
+        },
+        {
+            "name": "Test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/test.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--category","Airplane",
+                "--sketch_views", "F", "S", "T",
+                "--test_dir","./mini_data/test",
+                "--imsize", "256"
+            ],
+        },
+        {
+            "name": "Infer",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/infer.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--infer_imdir","./mini_data/train",
+
+            ],
         }
     ]
 }
